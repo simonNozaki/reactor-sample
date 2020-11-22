@@ -1,4 +1,6 @@
 gradle.properties
+twitter4j.properties
 
+.gradle/
 .idea/
 build/
