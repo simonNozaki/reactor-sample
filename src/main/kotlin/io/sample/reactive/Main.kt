@@ -1,13 +1,11 @@
 package io.sample.reactive
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
 import net.framework.api.rest.client.SimpleApiClient
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import twitter4j.Twitter
 import twitter4j.TwitterFactory
 import java.time.Duration
-import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
 import kotlin.collections.HashMap
@@ -15,12 +13,17 @@ import kotlin.collections.HashMap
 val logger: Logger = Logger.getLogger("reactor-sample")
 
 fun main(args: Array<String>) {
+    // プロファイリングを開始
+    setProfiler()
+
+    if ("\t".matches(Regex("[\b\\f\u0000\n\t]"))) println("制御文字マッチ")
+
     val mono: Mono<KV> = Mono.just(callRestApi(getJsonUris()["simple-kv"].orEmpty(), KV::class.java))
         .doFinally { logger.info(it.name) }
         .take(Duration.ofMillis(30000))
 
     mono.subscribe(
-        { logger.info(getMapper().writeValueAsString(it)) },
+        { logger.info(getMapper().toJson(it)) },
         {
             logger.log(Level.SEVERE, "Error occurred when fetching json from remote")
             throw it
@@ -64,9 +67,7 @@ fun getJsonUris(): Map<String, String> {
     }
 }
 
-fun printStackTrace(): Unit = Thread.currentThread().stackTrace.forEach { logger.info("${it.className}#${it.methodName}") }
-
-fun getMapper(): ObjectMapper = ObjectMapper()
+fun getMapper(): Gson = Gson()
 
 fun <T> callRestApi(url: String, clazz: Class<T>): T {
     return SimpleApiClient
